@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<meta name="description" content="Traductor de código Morse, binario, César, hexadecimal, ROT13 y ROT47.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+
+<title>CODE MORSE PRO — Multi-Cifrados</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d30;--panel2:#17243a;--ink:#edf3ff;--mut:#a7b6cf;--line:#2b3b56;--accent:#69d5ff;--accent2:#a78bfa;--danger:#ff9b9b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182a45 0,#0b1220 58%);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+main{width:min(920px,100%);margin:auto;padding:28px 18px 56px}
+header{text-align:center;margin:10px 0 28px}.logo{font-size:clamp(2.2rem,9vw,4rem);font-weight:900;letter-spacing:.07em;line-height:1.1;color:var(--accent);text-shadow:0 0 28px #69d5ff44}
+.tag{color:var(--mut);margin:10px 0 0}.panel{background:#121d30eF;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 18px 55px #0005}
+h1{font-size:1.4rem;margin:0 0 5px}h2{font-size:1.1rem;margin:22px 0 10px}.muted{color:var(--mut);font-size:.94rem}
+.controls{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;margin:22px 0}
+label{display:block;font-weight:700;margin:0 0 7px}
+select,input,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:inherit;padding:12px}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:2px}
+textarea{min-height:155px;resize:vertical;line-height:1.6}
+.swap{height:46px;width:48px;padding:0;font-size:1.35rem}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+button{border:1px solid #47708d;background:#1b3550;color:var(--ink);font:700  .96rem system-ui;padding:10px 15px;border-radius:10px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#071522}
+button:hover{filter:brightness(1.12)}button:active{transform:scale(.98)}
+.output{min-height:155px;white-space:pre-wrap;overflow-wrap:anywhere;background:#0c1626;border:1px solid var(--line);border-radius:10px;padding:14px;font:1rem/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.option{background:#0e1929;border:1px solid var(--line);border-radius:12px;padding:12px}
+.option label{font-size:.9rem}
+#status{min-height:24px;color:var(--accent);margin-top:8px}
+footer{text-align:center;color:var(--mut);font-size:.85rem;margin-top:24px}
+@media(max-width:600px){.controls{grid-template-columns:1fr 42px 1fr;gap:7px}.swap{width:42px}.panel{padding:15px}.options{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="logo">CODE MORSE PRO</div>
+<p class="tag">CENTRO DE TRADUCCIÓN Y CIFRADO</p>
+</header>
+<section class="panel">
+<h1>Traductor universal</h1>
+<p class="muted">Convierte texto entre Morse, binario, César, hexadecimal y distintos cifrados ROT.</p>
+<div class="controls">
+<div><label for="from">Convertir desde</label><select id="from">
+<option value="text">Texto normal</option><option value="morse">Código Morse</option><option value="binary">Código binario</option><option value="caesar">Cifrado César</option><option value="hex">Hexadecimal</option><option value="rot13">ROT13</option><option value="rot47">ROT47</option>
+</select></div>
+<button class="swap" id="swap" title="Intercambiar formatos" aria-label="Intercambiar formatos">⇄</button>
+<div><label for="to">Convertir a</label><select id="to">
+<option value="morse">Código Morse</option><option value="text">Texto normal</option><option value="binary">Código binario</option><option value="caesar">Cifrado César</option><option value="hex">Hexadecimal</option><option value="rot13">ROT13</option><option value="rot47">ROT47</option>
+</select></div>
+</div>
+<div class="options">
+<div class="option" id="shiftBox"><label for="shift">Desplazamiento César</label><input id="shift" type="number" min="-25" max="25" value="3"><p class="muted">Usa el mismo número para cifrar y descifrar.</p></div>
+<div class="option"><label for="morseStyle">Separación Morse</label><select id="morseStyle"><option value="slash">Palabras con /</option><option value="spaces">Palabras con 3 espacios</option></select><p class="muted">Las letras Morse se separan con un espacio.</p></div>
+</div>
+<label for="source">Texto o código de entrada</label>
+<textarea id="source" placeholder="Escribe o pega aquí lo que quieres traducir..."></textarea>
+<div class="actions">
+<button class="primary" id="convert">Traducir</button><button id="example">Ejemplo</button><button id="clear">Limpiar</button>
+</div>
+<label for="result">Resultado</label>
+<div class="output" id="result" role="status" aria-live="polite"></div>
+<div class="actions"><button id="copy">Copiar resultado</button></div>
+<div id="status" aria-live="polite"></div>
+</section>
+<footer>CODE MORSE PRO · Herramienta educativa de codificación y traducción</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const MORSE={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',0:'-----',1:'.----',2:'..---',3:'...--',4:'....-',5:'.....',6:'-....',7:'--...',8:'---..',9:'----.','.' :'.-.-.-',',':'--..--','?':'..--..',"'":'.----.','!':'-.-.--','/':'-..-.','(':'-.--.',')':'-.--.-',':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.','-':'-....-','"':'.-..-.','@':'.--.-.'};
+const UNMORSE=Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+function utf8bytes(s){return new TextEncoder().encode(s)}
+function fromBytes(bytes){return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(bytes))}
+function toBinary(s){return [...utf8bytes(s)].map(b=>b.toString(2).padStart(8,'0')).join(' ')}
+function fromBinary(s){let clean=s.trim();if(!clean)return '';let groups=clean.split(/[\s,]+/);if(groups.some(x=>!/^[01]{1,8}$/.test(x)))throw Error('Binario inválido. Usa grupos de 0 y 1 separados por espacios.');return fromBytes(groups.map(x=>parseInt(x,2)))}
+function toHex(s){return [...utf8bytes(s)].map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ')}
+function fromHex(s){let clean=s.trim().replace(/^0x/i,'');if(!clean)return '';let groups=clean.includes(' ')?clean.split(/\s+/):clean.match(/.{1,2}/g)||[];if(groups.some(x=>!/^[0-9a-fA-F]{2}$/.test(x)))throw Error('Hexadecimal inválido. Usa pares como 48 6F 6C 61.');return fromBytes(groups.map(x=>parseInt(x,16)))}
+function caesar(s,n){n=((n%26)+26)%26;return [...s].map(c=>{let code=c.charCodeAt(0);if(code>=65&&code<=90)return String.fromCharCode(65+(code-65+n)%26);if(code>=97&&code<=122)return String.fromCharCode(97+(code-97+n)%26);return c}).join('')}
+function rot47(s){return [...s].map(c=>{let x=c.charCodeAt(0);return x>=33&&x<=126?String.fromCharCode(33+(x-33+47)%94):c}).join('')}
+function encode(s,format){switch(format){case'text':return s;case'morse':return s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/\s+/).filter(Boolean).map(w=>[...w].map(c=>MORSE[c]||'?').join(' ')).join($('morseStyle').value==='slash'?' / ':'   ');case'binary':return toBinary(s);case'hex':return toHex(s);case'caesar':return caesar(s,Number($('shift').value)||0);case'rot13':return caesar(s,13);case'rot47':return rot47(s);default:throw Error('Formato no reconocido')}}
+function decode(s,format){switch(format){case'text':return s;case'morse':{let words=$('morseStyle').value==='slash'?s.trim().split(/\s*\/\s*/):s.trim().split(/\s{3,}|\n+/);return words.filter(Boolean).map(w=>w.trim().split(/\s+/).map(c=>UNMORSE[c]||'�').join('')).join(' ')}case'binary':return fromBinary(s);case'hex':return fromHex(s);case'caesar':return caesar(s,-(Number($('shift').value)||0));case'rot13':return caesar(s,13);case'rot47':return rot47(s);default:throw Error('Formato no reconocido')}}
+function convert(){try{const raw=$('source').value;const plain=decode(raw,$('from').value);$('result').textContent=encode(plain,$('to').value);$('status').textContent='Traducción lista.'}catch(e){$('result').textContent='';$('status').textContent=e.message}}
+$('convert').addEventListener('click',convert);
+$('source').addEventListener('input',()=>{if($('source').value)convert();else{$('result').textContent='';$('status').textContent=''}});
+$('from').addEventListener('change',convert);$('to').addEventListener('change',convert);$('shift').addEventListener('input',()=>{if($('source').value)convert()});$('morseStyle').addEventListener('change',()=>{if($('source').value)convert()});
+$('swap').onclick=()=>{let a=$('from').value;$('from').value=$('to').value;$('to').value=a;convert()};
+$('example').onclick=()=>{const samples={text:'Hola mundo',morse:'.... --- .-.. .- / -- ..- -. -.. ---',binary:'01001000 01101111 01101100 01100001',caesar:'Krod pxqgr',hex:'48 6F 6C 61',rot13:'Uby n zha qb',rot47:'w6==@ H@C=5'};$('source').value=samples[$('from').value]||'Hola mundo';convert()};
+$('clear').onclick=()=>{$('source').value='';$('result').textContent='';$('status').textContent=''};
+$('copy').onclick=async()=>{let t=$('result').textContent;if(!t){$('status').textContent='No hay resultado para copiar.';return}try{await navigator.clipboard.writeText(t);$('status').textContent='¡Resultado copiado!'}catch(e){$('status').textContent='Tu navegador no permitió copiar automáticamente. Mantén pulsado el resultado para copiarlo.'}};
+$('shiftBox').style.display='block';
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(err => console.log("SW:", err));
+  });
+}
+</script>
+</body>
+</html>
